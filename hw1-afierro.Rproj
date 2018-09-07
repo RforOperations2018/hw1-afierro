@@ -1,13 +1,67 @@
-Version: 1.0
+# Homework 1
+# Allyson Fierro
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
 
-EnableCodeIndexing: Yes
-UseSpacesForTab: Yes
-NumSpacesForTab: 2
-Encoding: UTF-8
+library(shiny)
+library(reshape2)
+library(dplyr)
+library(plotly)
+library(shinythemes)
+library(ggplot2)
+library(datasets)
 
-RnwWeave: Sweave
-LaTeX: pdfLaTeX
+#Rename Data
+arrests <- USArrests
+
+#Create new variable with state names
+arrests$State <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas" ,"Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota","Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming")
+
+#Subset data top 5 most populated states
+MostPop <- subset (arrests, subset = 
+                     (arrests$State == "California") |
+                     (arrests$State == "Texas") |
+                     (arrests$State == "Florida") |
+                     (arrests$State == "New York") |
+                     (arrests$State == "Pennsylvania")
+)
+
+#Melt data to put it in long form so I can use it to fill by variable in ggplot
+USrrests <- melt(MostPop, id.vars = "State")
+
+
+# Define UI for application that allows the user to select arrests by states
+ui <- fluidPage(
+  titlePanel("USA Arrests Grid"),
+  fluidRow(
+    column(4,
+           wellPanel(
+             selectInput("char_select",
+                         "States:",
+                         choices = levels(USArrests$name),
+                         multiple = TRUE,
+                         selectize = TRUE,
+                         selected = c("California", "Texas", "Florida", "New York", "Pennsylvania"))
+           )       
+    ),
+    column(8,
+           plotlyOutput("plot")
+    )
+  ),
+  fluidRow(
+    DT::dataTableOutput("table")
+  )
+)
+
+# Define server logic
+server <- function(input, output) {
+  output$plot <- renderPlotly({
+    dtable <- subset(USArrests, name %in% input$char_select)
+    ggplot(data = USArrests, aes(x = State, y = value, fill = variable)) + geom_bar(stat = "identity")
+  })
+  output$table <- DT::renderDataTable({
+    subset(USarrests, name %in% input$char_select, select = c(name, Murder, Assault, Urbanpop, Rape))
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
