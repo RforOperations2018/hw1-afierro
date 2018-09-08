@@ -1,4 +1,5 @@
 #Homework 1
+#Allyson Fierro
 
 library(shiny)
 library(ggplot2)
